@@ -67,17 +67,16 @@ else:
     st.info("✅ 目前消費還在控制內。")
 
 
-# 6. 圖表與表格
+
+# 6. 圖表與表格 (修正中文亂碼版)
 if not df.empty:
     st.subheader("📈 消費比例")
-    # 這裡做了點修正，確保繪圖成功
-    category_df = df.groupby("類別")["金額"].sum()
+    category_df = df.groupby("類別")["金額"].sum().reset_index()
     
-    import matplotlib.pyplot as plt
-    fig, ax = plt.subplots()
-    category_df.plot.pie(ax=ax, autopct='%1.1f%%', startangle=90)
-    ax.set_ylabel('') # 隱藏側邊標籤更美觀
-    st.pyplot(fig)
+    # 使用 Plotly 畫圖，完美支援中文且有動態效果
+    import plotly.express as px
+    fig = px.pie(category_df, values='金額', names='類別', hole=0.3)
+    st.plotly_chart(fig, use_container_width=True)
 
     st.subheader("📋 最近消費記錄")
     st.dataframe(df.sort_values("日期", ascending=False), use_container_width=True)
