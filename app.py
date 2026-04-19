@@ -66,15 +66,21 @@ else:
     st.progress(usage_rate)
     st.info("✅ 目前消費還在控制內。")
 
+
 # 6. 圖表與表格
 if not df.empty:
     st.subheader("📈 消費比例")
+    # 這裡做了點修正，確保繪圖成功
     category_df = df.groupby("類別")["金額"].sum()
-    st.pie_chart(category_df)
+    
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots()
+    category_df.plot.pie(ax=ax, autopct='%1.1f%%', startangle=90)
+    ax.set_ylabel('') # 隱藏側邊標籤更美觀
+    st.pyplot(fig)
 
     st.subheader("📋 最近消費記錄")
     st.dataframe(df.sort_values("日期", ascending=False), use_container_width=True)
-
 # 7. 清空功能
 if st.sidebar.button("🗑️ 清空所有數據"):
     if os.path.exists(DATA_FILE):
