@@ -10,12 +10,10 @@ st.set_page_config(page_title="NEURAL LEDGER v1.0", layout="wide", initial_sideb
 # 自定義 CSS：注入深色科技感樣式
 st.markdown("""
     <style>
-    /* 全域背景與文字 */
     .stApp {
         background-color: #0E1117;
         color: #E0E0E0;
     }
-    /* 卡片效果 */
     div[data-testid="stMetric"] {
         background-color: #161B22;
         border: 1px solid #30363D;
@@ -23,15 +21,14 @@ st.markdown("""
         padding: 15px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.3);
     }
-    /* 漸層標題 */
     .main-title {
         background: linear-gradient(90deg, #00F2FE 0%, #4FACFE 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         font-weight: 800;
         font-size: 3rem;
+        margin-bottom: 0px;
     }
-    /* 按鈕美化 */
     .stButton>button {
         width: 100%;
         background: linear-gradient(45deg, #2193b0, #6dd5ed);
@@ -44,6 +41,7 @@ st.markdown("""
 
 DATA_FILE = "web_ledger.csv"
 
+# 初始化資料
 if not os.path.exists(DATA_FILE):
     df = pd.DataFrame(columns=["日期", "項目", "金額", "類別"])
     df.to_csv(DATA_FILE, index=False)
@@ -51,7 +49,7 @@ if not os.path.exists(DATA_FILE):
 def get_data():
     return pd.read_csv(DATA_FILE)
 
-# --- 2. 側邊欄 (控制台風格) ---
+# --- 2. 側邊欄 ---
 with st.sidebar:
     st.markdown("### 🖥️ SYSTEM CONTROL")
     budget = st.number_input("CORE_BUDGET_SET", value=10000)
@@ -61,16 +59,17 @@ with st.sidebar:
             os.remove(DATA_FILE)
             st.rerun()
 
-# --- 3. 主畫面佈局 ---
-st.markdown('<p class="main-title">FINANCIAL NEURAL LINK</p>', unsafe_allow_html=True)
-st.caption("Status: Operational | Database: Local v1.02")
-
-# 頂部指標
+# --- 3. 數據運算 ---
 df = get_data()
 total_spent = df["金額"].sum()
 remaining = budget - total_spent
 usage_rate = (total_spent / budget) if budget > 0 else 0
 
+# --- 4. 主畫面佈局 ---
+st.markdown('<p class="main-title">FINANCIAL NEURAL LINK</p>', unsafe_allow_html=True)
+st.caption("Status: Operational | Database: Local v1.02")
+
+# 數據指標卡
 cols = st.columns(3)
 with cols[0]:
     st.metric("TOTAL_OUTFLOW", f"$ {total_spent:,.0f}")
@@ -79,15 +78,16 @@ with cols[1]:
 with cols[2]:
     st.metric("RESOURCE_USAGE", f"{usage_rate*100:.1f}%")
 
-# 進度條 (科技藍)
+# 進度條
 st.progress(min(usage_rate, 1.0))
 
-# 4. 數據輸入 (橫向排列減少空間佔用)
+# 數據輸入模組
+st.divider()
 with st.container():
     st.markdown("#### 📥 DATA_INPUT_MODULE")
     c1, c2, c3, c4 = st.columns([2, 1, 1, 1])
-    with c1: item = st.text_input("ITEM_NAME", label_visibility="collapsed", placeholder="Item Name")
-    with c2: amount = st.number_input("VALUE", label_visibility="collapsed", min_value=0.0)
+    with c1: item = st.text_input("ITEM_NAME", placeholder="輸入項目名稱", label_visibility="collapsed")
+    with c2: amount = st.number_input("VALUE", min_value=0.0, step=1.0, label_visibility="collapsed")
     with c3: category = st.selectbox("TAG", ["飲食", "交通", "娛樂", "居家", "其他"], label_visibility="collapsed")
     with c4: 
         if st.button("EXECUTE"):
@@ -96,30 +96,31 @@ with st.container():
                 new_data.to_csv(DATA_FILE, mode='a', header=False, index=False)
                 st.rerun()
 
-# 5. 視覺化面板 (互動式圖表)
-st.divider()
+# 視覺化展示
 row2_1, row2_2 = st.columns([1.2, 1])
 
 with row2_1:
     st.markdown("#### 📜 TRANSACTION_LOG")
-    st.dataframe(df.sort_values("日期", ascending=False), use_container_width=True, height=350)
+    st.dataframe(df.sort_values("日期", ascending=False), use_container_width=True, height=400)
 
 with row2_2:
     st.markdown("#### 📉 ALLOCATION_ANALYSIS")
     if not df.empty:
         category_df = df.groupby("類別")["金額"].sum().reset_index()
-       fig = px.pie(
+        # 使用手選顏色清單，避開庫路徑報錯
+        tech_colors = ['#00F2FE', '#4FACFE', '#2193b0', '#6dd5ed', '#30363D']
+        fig = px.pie(
             category_df, values='金額', names='類別', 
             hole=0.5, 
-            color_discrete_sequence=['#00F2FE', '#4FACFE', '#2193b0', '#6dd5ed', '#30363D']
+            color_discrete_sequence=tech_colors
         )
         fig.update_layout(
-            margin=dict(t=0, b=0, l=0, r=0),
+            margin=dict(t=30, b=0, l=0, r=0),
             paper_bgcolor='rgba(0,0,0,0)',
             plot_bgcolor='rgba(0,0,0,0)',
             font_color="white",
-            showlegend=False
+            showlegend=True
         )
         st.plotly_chart(fig, use_container_width=True)
     else:
-        st.info("Waiting for data stream...")
+        st.info("系統待機中：請輸入首筆數據以啟動分析模組。")
