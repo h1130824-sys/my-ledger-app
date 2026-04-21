@@ -1,14 +1,49 @@
 import streamlit as st
 import pandas as pd
+import plotly.express as px
 from datetime import datetime
 import os
 
-# 1. 網頁基本設定
-st.set_page_config(page_title="雲端小管家", layout="centered")
+# --- 1. 科技感 UI 配置 ---
+st.set_page_config(page_title="NEURAL LEDGER v1.0", layout="wide", initial_sidebar_state="expanded")
+
+# 自定義 CSS：注入深色科技感樣式
+st.markdown("""
+    <style>
+    /* 全域背景與文字 */
+    .stApp {
+        background-color: #0E1117;
+        color: #E0E0E0;
+    }
+    /* 卡片效果 */
+    div[data-testid="stMetric"] {
+        background-color: #161B22;
+        border: 1px solid #30363D;
+        border-radius: 10px;
+        padding: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    }
+    /* 漸層標題 */
+    .main-title {
+        background: linear-gradient(90deg, #00F2FE 0%, #4FACFE 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 800;
+        font-size: 3rem;
+    }
+    /* 按鈕美化 */
+    .stButton>button {
+        width: 100%;
+        background: linear-gradient(45deg, #2193b0, #6dd5ed);
+        border: none;
+        color: white;
+        font-weight: bold;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
 DATA_FILE = "web_ledger.csv"
 
-# 2. 初始化資料檔 (如果檔案不存在就建一個新的)
 if not os.path.exists(DATA_FILE):
     df = pd.DataFrame(columns=["日期", "項目", "金額", "類別"])
     df.to_csv(DATA_FILE, index=False)
@@ -16,72 +51,75 @@ if not os.path.exists(DATA_FILE):
 def get_data():
     return pd.read_csv(DATA_FILE)
 
-# --- 側邊欄：預算設定 ---
-st.sidebar.header("⚙️ 預算管理")
-budget = st.sidebar.number_input("本月總預算", value=10000)
-
-# --- 主畫面 ---
-st.title("💰 我的雲端記帳本")
-
-# 3. 新增支出區塊
-with st.expander("➕ 點我記錄新支出", expanded=True):
-    col1, col2 = st.columns(2)
-    with col1:
-        item = st.text_input("項目", placeholder="例如：午餐")
-        amount = st.number_input("金額", min_value=0.0, step=10.0)
-    with col2:
-        category = st.selectbox("類別", ["飲食", "交通", "娛樂", "居家", "其他"])
-        date = st.date_input("日期", datetime.now())
-    
-    if st.button("確認提交"):
-        if item:
-            new_data = pd.DataFrame([[date, item, amount, category]], columns=["日期", "項目", "金額", "類別"])
-            new_data.to_csv(DATA_FILE, mode='a', header=False, index=False)
-            st.success(f"✅ 已記錄: {item} ${amount}")
+# --- 2. 側邊欄 (控制台風格) ---
+with st.sidebar:
+    st.markdown("### 🖥️ SYSTEM CONTROL")
+    budget = st.number_input("CORE_BUDGET_SET", value=10000)
+    st.divider()
+    if st.button("🔴 RESET DATABASE"):
+        if os.path.exists(DATA_FILE):
+            os.remove(DATA_FILE)
             st.rerun()
-        else:
-            st.error("❌ 請輸入項目名稱！")
 
-# 4. 數據讀取與計算
+# --- 3. 主畫面佈局 ---
+st.markdown('<p class="main-title">FINANCIAL NEURAL LINK</p>', unsafe_allow_html=True)
+st.caption("Status: Operational | Database: Local v1.02")
+
+# 頂部指標
 df = get_data()
 total_spent = df["金額"].sum()
 remaining = budget - total_spent
 usage_rate = (total_spent / budget) if budget > 0 else 0
 
-# 5. 視覺化面板
-st.subheader("📊 財務概況")
-c1, c2, c3 = st.columns(3)
-c1.metric("總支出", f"${total_spent:,.0f}")
-c2.metric("剩餘預算", f"${remaining:,.0f}")
-c3.metric("使用率", f"{usage_rate*100:.1f}%")
+cols = st.columns(3)
+with cols[0]:
+    st.metric("TOTAL_OUTFLOW", f"$ {total_spent:,.0f}")
+with cols[1]:
+    st.metric("REMAINING_LIQUIDITY", f"$ {remaining:,.0f}")
+with cols[2]:
+    st.metric("RESOURCE_USAGE", f"{usage_rate*100:.1f}%")
 
-# 預算進度條
-if usage_rate >= 1.0:
-    st.progress(1.0)
-    st.error("🚨 預算已經爆了！別再買啦！")
-elif usage_rate >= 0.8:
-    st.progress(usage_rate)
-    st.warning("⚠️ 預算快用完囉，注意荷包。")
-else:
-    st.progress(usage_rate)
-    st.info("✅ 目前消費還在控制內。")
+# 進度條 (科技藍)
+st.progress(min(usage_rate, 1.0))
 
+# 4. 數據輸入 (橫向排列減少空間佔用)
+with st.container():
+    st.markdown("#### 📥 DATA_INPUT_MODULE")
+    c1, c2, c3, c4 = st.columns([2, 1, 1, 1])
+    with c1: item = st.text_input("ITEM_NAME", label_visibility="collapsed", placeholder="Item Name")
+    with c2: amount = st.number_input("VALUE", label_visibility="collapsed", min_value=0.0)
+    with c3: category = st.selectbox("TAG", ["飲食", "交通", "娛樂", "居家", "其他"], label_visibility="collapsed")
+    with c4: 
+        if st.button("EXECUTE"):
+            if item:
+                new_data = pd.DataFrame([[datetime.now().date(), item, amount, category]], columns=["日期", "項目", "金額", "類別"])
+                new_data.to_csv(DATA_FILE, mode='a', header=False, index=False)
+                st.rerun()
 
+# 5. 視覺化面板 (互動式圖表)
+st.divider()
+row2_1, row2_2 = st.columns([1.2, 1])
 
-# 6. 圖表與表格 (修正中文亂碼版)
-if not df.empty:
-    st.subheader("📈 消費比例")
-    category_df = df.groupby("類別")["金額"].sum().reset_index()
-    
-    # 使用 Plotly 畫圖，完美支援中文且有動態效果
-    import plotly.express as px
-    fig = px.pie(category_df, values='金額', names='類別', hole=0.3)
-    st.plotly_chart(fig, use_container_width=True)
+with row2_1:
+    st.markdown("#### 📜 TRANSACTION_LOG")
+    st.dataframe(df.sort_values("日期", ascending=False), use_container_width=True, height=350)
 
-    st.subheader("📋 最近消費記錄")
-    st.dataframe(df.sort_values("日期", ascending=False), use_container_width=True)
-# 7. 清空功能
-if st.sidebar.button("🗑️ 清空所有數據"):
-    if os.path.exists(DATA_FILE):
-        os.remove(DATA_FILE)
-        st.rerun()
+with row2_2:
+    st.markdown("#### 📉 ALLOCATION_ANALYSIS")
+    if not df.empty:
+        category_df = df.groupby("類別")["金額"].sum().reset_index()
+        fig = px.pie(
+            category_df, values='金額', names='類別', 
+            hole=0.5, 
+            color_discrete_sequence=px.colors.sequential.Cyan_r
+        )
+        fig.update_layout(
+            margin=dict(t=0, b=0, l=0, r=0),
+            paper_bgcolor='rgba(0,0,0,0)',
+            plot_bgcolor='rgba(0,0,0,0)',
+            font_color="white",
+            showlegend=False
+        )
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.info("Waiting for data stream...")
