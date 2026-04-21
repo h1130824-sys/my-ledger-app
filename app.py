@@ -108,10 +108,10 @@ with row2_2:
     st.markdown("#### 📉 ALLOCATION_ANALYSIS")
     if not df.empty:
         category_df = df.groupby("類別")["金額"].sum().reset_index()
-        fig = px.pie(
+       fig = px.pie(
             category_df, values='金額', names='類別', 
             hole=0.5, 
-            color_discrete_sequence=px.colors.sequential.Cyan_r
+            color_discrete_sequence=['#00F2FE', '#4FACFE', '#2193b0', '#6dd5ed', '#30363D']
         )
         fig.update_layout(
             margin=dict(t=0, b=0, l=0, r=0),
